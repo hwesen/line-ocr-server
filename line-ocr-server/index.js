@@ -1,11 +1,24 @@
 const express = require('express');
 const cors = require('cors');
 const { createWorker } = require('tesseract.js');
-const sharp = require('sharp'); // ✅ 加入這行
+const sharp = require('sharp');
+const cv = require('opencv4nodejs'); // ✅ 加入 OpenCV
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// ✅ 模糊度判斷（回傳 true = 模糊）
+function isImageBlurred(buffer, threshold = 100) {
+  const img = cv.imdecode(buffer); // 轉為 Mat 格式
+  const gray = img.bgrToGray();
+  const laplacian = gray.laplacian(cv.CV_64F);
+  const mean = laplacian.meanStdDev();
+  const variance = mean.stddev.at(0, 0) ** 2;
+
+  console.log('📉 Laplacian Variance:', variance);
+  return variance < threshold;
+}
 
 app.post('/ocr', async (req, res) => {
   const base64 = req.body.image;
@@ -17,10 +30,13 @@ app.post('/ocr', async (req, res) => {
     const rawBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(rawBase64, 'base64');
 
-    // ✅ 檢查解析度
     const meta = await sharp(buffer).metadata();
     if (meta.width < 800 || meta.height < 500) {
-      return res.status(400).send('圖片尺寸過小，請重新拍攝清晰處方箋');
+      return res.status(400).send('圖片尺寸過小，請重新拍攝');
+    }
+
+    if (isImageBlurred(buffer)) {
+      return res.status(400).send('圖片可能過於模糊，請重拍');
     }
 
     await worker.loadLanguage('chi_tra+eng');
