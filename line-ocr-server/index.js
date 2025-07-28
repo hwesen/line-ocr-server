@@ -36,7 +36,7 @@ const app = express();
 // Register the callback route that LINE will POST events to. The
 // middleware function verifies the request signature and parses the
 // body. If verification fails the request is rejected.
-app.post('/callback', middleware(config), (req, res) => {
+app.post('/webhook', middleware(config), (req, res) => {
   // Handle each event asynchronously. If any handler rejects the
   // promise, catch the error and return a 500 response.
   Promise.all(req.body.events.map(handleEvent))
