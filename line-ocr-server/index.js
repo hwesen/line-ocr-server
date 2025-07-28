@@ -4,7 +4,7 @@ const { createWorker } = require('tesseract.js');
 const sharp = require('sharp');
 const cv = require('opencv4nodejs'); // ✅ 加入 OpenCV
 
-const app = express();
+const app = express(); 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
