@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const sharp = require('sharp');
-const cv = require('opencv4nodejs');
+const cv = require('@u4/opencv4nodejs');
 const { createWorker } = require('tesseract.js');
 
 const app = express();
