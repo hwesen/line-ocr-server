@@ -1,7 +1,6 @@
 {
   "name": "ocr-server",
   "version": "1.0.0",
-  "description": "Tesseract OCR with image quality check",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,7 +9,6 @@
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "tesseract.js": "^4.0.2",
-    "sharp": "^0.33.0",
-    "opencv4nodejs": "^5.6.0"  // ✅ 加上這行
+    "opencv4nodejs": "^5.6.0"
   }
 }
