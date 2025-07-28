@@ -1,0 +1,14 @@
+{
+  "name": "ocr-simple",
+  "version": "1.0.0",
+  "description": "Tesseract OCR server (chi_tra+eng)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "tesseract.js": "^4.0.2"
+  }
+}
