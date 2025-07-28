@@ -10,10 +10,13 @@ app.post('/ocr', async (req, res) => {
   const base64 = req.body.image;
   if (!base64) return res.status(400).send('Missing image');
 
-  const worker = await createWorker('chi_tra'); // 繁體中文
+  const worker = await createWorker('chi_tra');
 
   try {
-    const { data: { text } } = await worker.recognize(Buffer.from(base64, 'base64'));
+    const rawBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(rawBase64, 'base64');
+
+    const { data: { text } } = await worker.recognize(buffer);
     res.send(text);
   } catch (err) {
     console.error('OCR error:', err);
