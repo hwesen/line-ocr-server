@@ -10,7 +10,7 @@ app.post('/ocr', async (req, res) => {
   const base64 = req.body.image;
   if (!base64) return res.status(400).send('Missing image');
 
-  const worker = await createWorker('chi_tra+eng', {
+  const worker = createWorker({
     logger: m => console.log(m),
   });
 
@@ -18,9 +18,11 @@ app.post('/ocr', async (req, res) => {
     const rawBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(rawBase64, 'base64');
 
-    // 設定從左到右（psm 6）
+    await worker.load();
+    await worker.loadLanguage('chi_tra+eng');
+    await worker.initialize('chi_tra+eng');
     await worker.setParameters({
-      tessedit_pageseg_mode: 6,
+      tessedit_pageseg_mode: '6', // 從左到右
       preserve_interword_spaces: '1'
     });
 
