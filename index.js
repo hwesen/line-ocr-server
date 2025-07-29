@@ -10,7 +10,7 @@ app.post('/ocr', async (req, res) => {
   const base64 = req.body.image;
   if (!base64) return res.status(400).json({ status: 'error', message: 'Missing image' });
 
-  const worker = await createWorker('chi_tra+eng', {
+  const worker = createWorker({
     logger: m => console.log(m),
   });
 
@@ -18,12 +18,16 @@ app.post('/ocr', async (req, res) => {
     const rawBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(rawBase64, 'base64');
 
+    // 🧠 正確初始化順序
+    await worker.load();
+    await worker.loadLanguage('chi_tra+eng');
+    await worker.initialize('chi_tra+eng');
+
     await worker.setParameters({
-      tessedit_pageseg_mode: 6, // 從左到右段落
+      tessedit_pageseg_mode: 6,
       preserve_interword_spaces: '1'
     });
 
-    // ✅ 加入 timeout 控制（最多等 20 秒）
     const recognizeWithTimeout = (buffer) =>
       Promise.race([
         worker.recognize(buffer),
@@ -31,8 +35,8 @@ app.post('/ocr', async (req, res) => {
       ]);
 
     const result = await recognizeWithTimeout(buffer);
-
     const text = result.data.text.trim();
+
     console.log('✅ OCR 成功：', text.slice(0, 50).replace(/\n/g, ' '));
 
     res.json({
