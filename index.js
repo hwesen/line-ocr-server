@@ -19,7 +19,9 @@ app.post('/ocr', async (req, res) => {
     const buffer = Buffer.from(rawBase64, 'base64');
 
     // 🧠 正確初始化順序
-    await worker.load();
+    const worker = await createWorker({
+  logger: m => console.log(m),
+});
     await worker.loadLanguage('chi_tra+eng');
     await worker.initialize('chi_tra+eng');
 
