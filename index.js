@@ -6,29 +6,28 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// 🔍 解析文字的藥品資訊欄位
-function parseOCRText(text) {
+// 藥品解析邏輯
+function parseDrugs(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const drugs = [];
+  const result = [];
+
+  const regex = /^(\d+\.?)?\s*([\w\-\+\(\)\/]+.*?)\s+([\d\.]+)\s*([a-zA-Zμ]+)\s+(.+?)\s+(\d+)\s+(.*)$/i;
 
   for (const line of lines) {
-    // 嘗試擷取藥品資訊（名稱 + 劑量 + 單位 + 用法 + 時間 + 天數）
-    const match = line.match(/(.+?)(\d+(?:\.\d+)?)(mg|g|ml|顆|錠)?(?:\s*)(早|午|晚|睡前|早上|中午|晚上)?(?:\s*)(\d+天)?(?:\s*)(.*)?/i);
-    if (!match) continue;
-
-    const [, name, dose, unit, time, daysRaw, method] = match;
-
-    drugs.push({
-      name: name?.trim() || '',
-      dose: dose || '',
-      unit: unit || '',
-      time: time || '',
-      days: daysRaw ? daysRaw.replace('天', '') : '',
-      method: method?.trim() || ''
-    });
+    const match = line.match(regex);
+    if (match) {
+      result.push({
+        name: match[2],
+        dosage: match[3],
+        unit: match[4],
+        frequency: match[5],
+        days: match[6],
+        route: match[7]
+      });
+    }
   }
 
-  return drugs;
+  return result;
 }
 
 app.post('/ocr', async (req, res) => {
@@ -48,19 +47,24 @@ app.post('/ocr', async (req, res) => {
       preserve_interword_spaces: '1'
     });
 
-    const { data: { text } } = await worker.recognize(buffer);
+    // 限制 OCR 時間最多 20 秒
+    const recognizeWithTimeout = Promise.race([
+      worker.recognize(buffer),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 20000))
+    ]);
 
-    const parsed = parseOCRText(text);
+    const { data: { text } } = await recognizeWithTimeout;
+
+    const parsed = parseDrugs(text);
 
     res.json({
-      status: 'ok',
       rawText: text,
       parsed
     });
 
   } catch (err) {
     console.error('OCR error:', err);
-    res.status(500).send('OCR failed');
+    res.status(500).json({ error: 'OCR failed', detail: err.message });
   } finally {
     await worker.terminate();
   }
