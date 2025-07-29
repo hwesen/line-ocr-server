@@ -6,8 +6,30 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// 設定 timeout（單位毫秒）
-const OCR_TIMEOUT = 15000; // 15 秒
+// 🔍 解析文字的藥品資訊欄位
+function parseOCRText(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const drugs = [];
+
+  for (const line of lines) {
+    // 嘗試擷取藥品資訊（名稱 + 劑量 + 單位 + 用法 + 時間 + 天數）
+    const match = line.match(/(.+?)(\d+(?:\.\d+)?)(mg|g|ml|顆|錠)?(?:\s*)(早|午|晚|睡前|早上|中午|晚上)?(?:\s*)(\d+天)?(?:\s*)(.*)?/i);
+    if (!match) continue;
+
+    const [, name, dose, unit, time, daysRaw, method] = match;
+
+    drugs.push({
+      name: name?.trim() || '',
+      dose: dose || '',
+      unit: unit || '',
+      time: time || '',
+      days: daysRaw ? daysRaw.replace('天', '') : '',
+      method: method?.trim() || ''
+    });
+  }
+
+  return drugs;
+}
 
 app.post('/ocr', async (req, res) => {
   const base64 = req.body.image;
@@ -26,18 +48,19 @@ app.post('/ocr', async (req, res) => {
       preserve_interword_spaces: '1'
     });
 
-    // 包一層逾時保護
-    const result = await Promise.race([
-      worker.recognize(buffer),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('OCR timeout: 超過時間未回應')), OCR_TIMEOUT)
-      )
-    ]);
+    const { data: { text } } = await worker.recognize(buffer);
 
-    res.send(result.data.text);
+    const parsed = parseOCRText(text);
+
+    res.json({
+      status: 'ok',
+      rawText: text,
+      parsed
+    });
+
   } catch (err) {
     console.error('OCR error:', err);
-    res.status(500).send(err.message || 'OCR failed');
+    res.status(500).send('OCR failed');
   } finally {
     await worker.terminate();
   }
