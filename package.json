@@ -1,8 +1,9 @@
-
 {
   "name": "ocr-server",
   "version": "1.0.0",
+  "description": "LINE OCR 辨識伺服器",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
@@ -10,5 +11,8 @@
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "tesseract.js": "^4.1.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
