@@ -26,9 +26,10 @@ app.post('/ocr', async (req, res) => {
     await worker.initialize('chi_tra+eng');
 
     await worker.setParameters({
-      tessedit_pageseg_mode: 6,
-      preserve_interword_spaces: '1'
-    });
+  tessedit_pageseg_mode: 6, 
+  preserve_interword_spaces: '1',
+  user_defined_dpi: '300'
+});
 
     const recognizeWithTimeout = (buffer) =>
       Promise.race([
